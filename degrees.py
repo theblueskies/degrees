@@ -20,10 +20,10 @@ SORKIN = 'https://en.wikipedia.org/wiki/Aaron_Sorkin'
 class BaconDegrees:
     # Degrees of separation
     deg = Queue()
-    # Primary queue where the workers select the next uri from
+    # Primary queue where the workers select the next uri from.
+    # 0-20000 elements are for active usage.
+    # 20000-32000 are for holding URLS while waiting for space in the buffer of first 20000 to free up
     q = Queue(32000)
-    # Overflow queue
-    overflow_q = Queue(32000)
     # Size of self.q : This is needed since multiprocessing.Queue.qsize() is not implemented for macs
     qsize = Queue()
     # Set of explored URIs
@@ -54,11 +54,9 @@ class BaconDegrees:
 
     # Explore the graph
     def explore(self, target_uri, event=None):
-        while not self.q.empty() or not self.overflow_q.empty():
+        while not self.q.empty():
             if not self.q.empty():
                 path = self.q.get()
-            elif not self.overflow_q.empty():
-                path = self.overflow_q.get()
             else:
                 break
 
@@ -76,14 +74,15 @@ class BaconDegrees:
             qs = self.qsize.get()
             new_size = qs + len(wiki_links)
 
-            # If there is not enough size in self.q, then node is stored in self.overflow_q and cycled back
-            # in once self.q has space available on it again.
-            if new_size >= 32000:
-                self.qsize.put(qs-1)
-                self.overflow_q.put(path)
+            # If there is not enough size in self.q[0:20000], then URL is put back in self.q[20000:32000]
+            # to be explored later again. It's child nodes are not put on the queue since there is no space in
+            # the buffer space of the first 20000 elements of self.q
+            if new_size >= 20000:
+                self.qsize.put(qs)
+                self.q.put(path)
                 continue
 
-            # There was enough space on Q. Let's insert the new links in self.q.
+            # There was enough space on self.q. Let's insert the new links in self.q.
             self.qsize.put(new_size-1)
             for link in wiki_links:
                 if link not in self.explored:

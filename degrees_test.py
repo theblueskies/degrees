@@ -3,22 +3,35 @@ from unittest import TestCase
 from degrees import BaconDegrees, TOM_CRUISE, GOOD_MEN, SORKIN
 
 
-def test_get_links():
-    bacon_degrees = BaconDegrees()
-    links = bacon_degrees.get_links(TOM_CRUISE)
-    assert links == EXPECTED_LINKS
+class TestSeparationDegrees(TestCase):
+    def setUp(self):
+        self.bacon_degrees = BaconDegrees()
 
+    def test_get_links(self):
+        links = self.bacon_degrees.get_links(TOM_CRUISE)
+        assert links == EXPECTED_LINKS
 
-def test_get_links_empty():
-    bacon_degrees = BaconDegrees()
-    links = bacon_degrees.get_links(5)
-    assert links == []
+    def test_get_links_empty(self):
+        links = self.bacon_degrees.get_links(5)
+        assert links == []
 
+    def test_get_degrees(self):
+        degrees = self.bacon_degrees.get_degrees(GOOD_MEN, SORKIN)
+        assert degrees == 1
 
-def test_get_degrees():
-    bacon_degrees = BaconDegrees()
-    degrees = bacon_degrees.get_degrees(GOOD_MEN, SORKIN)
-    assert degrees == 1
+    def test_parser(self):
+        parser = self.bacon_degrees.get_parser()
+        args = parser.parse_args(['--start', 'hello', '--target', 'world'])
+
+        assert args.start_uri == 'hello'
+        assert args.target_uri == 'world'
+
+    def test_empty_or_unseeded_queues(self):
+        self.bacon_degrees.explore('target_uri')
+
+        d = self.bacon_degrees.deg.get()
+        assert d == -1
+
 
 EXPECTED_LINKS = [
     'https://en.wikipedia.org/wiki/21st_Saturn_Awards',

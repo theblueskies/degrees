@@ -18,13 +18,20 @@ Start and Target URIs. It may not be the smallest degree of separation in every 
 
 
 ## Running  
+Clone and cd into the directory. After that, execute the following:
 ```
+virtualenv -p python3 env  
+source env/bin/activate  
 pip install -r requirements.txt  
 python degrees.py  
 
 # You can change the start and target uris from the command line like this:  
-python degrees.py --start=https://en.wikipedia.org/wiki/Tom_Cruise --target=https://en.wikipedia.org/wiki/Kevin_Bacon
+python degrees.py --start=https://en.wikipedia.org/wiki/Tom_Cruise --target=https://en.wikipedia.org/wiki/Kevin_Bacon  
 ```
+Defaults:  
+* start=https://en.wikipedia.org/wiki/A_Few_Good_Men  
+* target=https://en.wikipedia.org/wiki/Kevin_Bacon  
+
 
 ## Testing  
 ```

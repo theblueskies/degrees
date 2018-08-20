@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+import pytest
+
 from degrees import BaconDegrees, TOM_CRUISE, GOOD_MEN, SORKIN
 
 
@@ -17,7 +19,7 @@ class TestSeparationDegrees(TestCase):
 
     def test_get_degrees(self):
         degrees = self.bacon_degrees.get_degrees(GOOD_MEN, SORKIN)
-        assert degrees == 1
+        assert degrees == (['https://en.wikipedia.org/wiki/A_Few_Good_Men', 'https://en.wikipedia.org/wiki/Aaron_Sorkin'], 1)
 
     def test_parser(self):
         parser = self.bacon_degrees.get_parser()
@@ -31,6 +33,20 @@ class TestSeparationDegrees(TestCase):
 
         d = self.bacon_degrees.deg.get()
         assert d == -1
+
+    def test_url_validation_success(self):
+        url = 'https://en.wikipedia.org/wiki/Tree'
+        result = self.bacon_degrees.validate_urls([url])
+        assert result == True
+
+    def test_url_validation_fail(self):
+        test_data= [
+            'https://en.wikipedia.org/wiki/Tree12312',
+            'https://www.amazon.com/all-new-amazon-echo-speaker-with-wifi-alexa-dark-charcoal/dp/B06XCM9LJ4',
+        ]
+        for url in test_data:
+            with pytest.raises(ValueError):
+                self.bacon_degrees.validate_urls([url])
 
 
 EXPECTED_LINKS = [

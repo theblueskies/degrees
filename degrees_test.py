@@ -32,7 +32,7 @@ class TestSeparationDegrees(TestCase):
         self.bacon_degrees.explore('target_uri')
 
         d = self.bacon_degrees.deg.get()
-        assert d == -1
+        assert d == []
 
     def test_url_validation_success(self):
         url = 'https://en.wikipedia.org/wiki/Tree'

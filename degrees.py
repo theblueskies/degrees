@@ -1,3 +1,4 @@
+import argparse
 import sys
 import time
 
@@ -111,7 +112,14 @@ class BaconDegrees:
 
 if __name__ == '__main__':
     start_time = time.time()
-    kbacon = BaconDegrees()
 
-    print(kbacon.get_degrees(TOM_CRUISE, KEVIN_BACON))
-    print("--- %s seconds ---" % (time.time() - start_time))
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Degrees of separation')
+    parser.add_argument('--start', dest='start_uri', default=TOM_CRUISE, help='The URI from which to start the search')
+    parser.add_argument('--target', dest='target_uri', default=KEVIN_BACON, help='The target URI to arrive at')
+    args = parser.parse_args()
+
+    kbacon = BaconDegrees()
+    print(kbacon.get_degrees(args.start_uri, args.target_uri))
+
+    print("Run time: %s seconds" % (time.time() - start_time))

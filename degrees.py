@@ -1,6 +1,7 @@
 import argparse
 import sys
 import time
+from urllib.parse import urlparse
 
 import requests
 import bs4
@@ -64,8 +65,7 @@ class BaconDegrees:
             node = path[-1]
 
             if node == target_uri:
-                calc_degree = len(path) - 1
-                self.deg.put(calc_degree)
+                self.deg.put(path)
                 if event:
                     event.set()
                 return
@@ -97,7 +97,9 @@ class BaconDegrees:
             event.set()
 
     # Driver function which spins up a worker_pool and runs the explore() function
-    def get_degrees(self, start_uri=TOM_CRUISE, target_uri=KEVIN_BACON):
+    def get_degrees(self, start_uri=GOOD_MEN, target_uri=KEVIN_BACON):
+        validation = self.validate_urls([start_uri, target_uri])
+
         worker_pool = Pool(cpu_count())
         worker_manager = Manager()
         event = worker_manager.Event()
@@ -109,16 +111,36 @@ class BaconDegrees:
         event.wait()
         worker_pool.terminate()
 
-        d = self.deg.get()
-        return d
+        path = self.deg.get()
+        degrees = len(path) - 1
+        return path, degrees
 
+    # Parse command line arguments
     def get_parser(self):
-        # Parse command line arguments
         parser = argparse.ArgumentParser(description='Degrees of separation')
-        parser.add_argument('--start', dest='start_uri', default=TOM_CRUISE, help='The URI from which to start the search')
+        parser.add_argument('--start', dest='start_uri', default=GOOD_MEN, help='The URI from which to start the search')
         parser.add_argument('--target', dest='target_uri', default=KEVIN_BACON, help='The target URI to arrive at')
 
         return parser
+
+    # Validate that the URLs are in Wikipedia
+    def validate_urls(self, urls):
+        if urls == [] or urls == '':
+            raise ValueError('Please enter start and target URLs')
+
+        for url in urls:
+            parsed_url = urlparse(url)
+            if not parsed_url.netloc.endswith('wikipedia.org'):
+                message = '{} is not a valid Wikipedia URL'.format(url)
+                raise ValueError(message)
+
+            # Validate that the URI actually exists in Wikipedia
+            response = requests.get(url)
+            if response.status_code != 200:
+                message = '{} is a bad URI. Status code:{}'.format(url, response.status_code)
+                raise ValueError(message)
+
+        return True
 
 
 if __name__ == '__main__':
@@ -127,6 +149,12 @@ if __name__ == '__main__':
     kbacon = BaconDegrees()
     parser = kbacon.get_parser()
     args = parser.parse_args()
-    print('Degrees: ', kbacon.get_degrees(args.start_uri, args.target_uri))
+    print('\nStart URL: {} \nTarget URL: {}'.format(args.start_uri, args.target_uri))
 
-    print("Run time: %s seconds" % (time.time() - start_time))
+    path, degrees = kbacon.get_degrees(args.start_uri, args.target_uri)
+    print('Degrees: ', degrees)
+    print('Path:')
+    for p in path:
+        print('    ', p)
+
+    print('\nRun time: %s seconds' % (time.time() - start_time))

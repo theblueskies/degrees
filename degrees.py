@@ -127,6 +127,6 @@ if __name__ == '__main__':
     kbacon = BaconDegrees()
     parser = kbacon.get_parser()
     args = parser.parse_args()
-    print(kbacon.get_degrees(args.start_uri, args.target_uri))
+    print('Degrees: ', kbacon.get_degrees(args.start_uri, args.target_uri))
 
     print("Run time: %s seconds" % (time.time() - start_time))

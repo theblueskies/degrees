@@ -52,14 +52,17 @@ class BaconDegrees:
 
         return sorted(list(wiki_set))
 
+    # Checks all the links on the current page first, before enqueing them.
+    def pre_enque_check(self, target_uri, wiki_links):
+        for link in wiki_links:
+            if link == target_uri:
+                return link
+        return False
+
     # Explore the graph
     def explore(self, target_uri, event=None):
-        while not self.q.empty():
-            if not self.q.empty():
-                path = self.q.get()
-            else:
-                break
-
+        while not event.is_set():
+            path = self.q.get()
             node = path[-1]
 
             if node == target_uri:
@@ -70,6 +73,15 @@ class BaconDegrees:
 
             self.explored.add(node)
             wiki_links = self.get_links(node)
+
+            # Checks all the links on the current page first, before enqueing them.
+            check_link = self.pre_enque_check(target_uri, wiki_links)
+            if check_link:
+                path.append(check_link)
+                self.deg.put(path)
+                if event:
+                    event.set()
+                return
 
             qs = self.qsize.get()
             new_size = qs + len(wiki_links)
@@ -91,9 +103,12 @@ class BaconDegrees:
 
                     self.q.put(new_path)
 
-        self.deg.put([])
-        if event:
-            event.set()
+            # For the rare (perhaps non-existent) case when a wikipedia page does not have any
+            # links going in/out of it.
+            if self.q.empty() and not event.is_set():
+                self.deg.put([])
+                event.set()
+                return
 
     # Driver function which spins up a worker_pool and runs the explore() function
     def get_degrees(self, start_uri=GOOD_MEN, target_uri=KEVIN_BACON):
@@ -106,7 +121,10 @@ class BaconDegrees:
         self.q.put([start_uri])
         self.qsize.put(1)
 
-        worker_pool.apply_async(self.explore, (target_uri, event))
+        # Start up all the workers in the pool
+        for i in range(cpu_count()):
+            worker_pool.apply_async(self.explore, (target_uri, event))
+
         event.wait()
         worker_pool.terminate()
 

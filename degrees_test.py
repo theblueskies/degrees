@@ -1,4 +1,6 @@
+from multiprocessing import Manager
 from unittest import TestCase
+from unittest.mock import patch
 
 import pytest
 
@@ -28,8 +30,22 @@ class TestSeparationDegrees(TestCase):
         assert args.start_uri == 'hello'
         assert args.target_uri == 'world'
 
-    def test_empty_or_unseeded_queues(self):
-        self.bacon_degrees.explore('target_uri')
+    def test_pre_enque_check(self):
+       success = self.bacon_degrees.pre_enque_check('check_true.com', ['check_true.com'])
+       assert success == 'check_true.com'
+
+       result = self.bacon_degrees.pre_enque_check('no_result.com', ['check_true.com'])
+       assert result == False
+
+    @patch('degrees.BaconDegrees.get_links')
+    def test_empty_q(self, mock_links):
+        mock_links.return_value = []
+        self.bacon_degrees.q.put(['random_url'])
+        self.bacon_degrees.qsize.put(1)
+
+        worker_manager = Manager()
+        event = worker_manager.Event()
+        self.bacon_degrees.explore('target_uri', event)
 
         d = self.bacon_degrees.deg.get()
         assert d == []

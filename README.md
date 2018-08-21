@@ -14,7 +14,7 @@ It is important to note that there may be more than one path to a Target URI. Fo
 2. Tom Cruise > A few good men > Kevin Bacon  
 
 This algorithm returns the degree of separation of the first link that it obtains between the
-Start and Target URIs. It may not be the smallest degree of separation in every case.  
+Start and Target URIs.
 
 
 ## Running  

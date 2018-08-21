@@ -1,6 +1,7 @@
 import argparse
 import sys
 import time
+from queue import Empty
 from urllib.parse import urlparse
 
 import requests
@@ -28,6 +29,8 @@ class BaconDegrees:
     qsize = Queue()
     # Set of explored URIs
     explored = set()
+    # Timeout (in seconds) for getting elements from a queue.
+    TIMEOUT = 5
 
     # Get links
     def get_links(self, init_uri=FOOTLOOSE):
@@ -62,7 +65,13 @@ class BaconDegrees:
     # Explore the graph
     def explore(self, target_uri, event=None):
         while not event.is_set():
-            path = self.q.get()
+            try:
+                path = self.q.get(timeout=self.TIMEOUT)
+            except Empty:
+                self.deg.put([])
+                event.set()
+                return
+
             node = path[-1]
 
             if node == target_uri:
@@ -100,15 +109,7 @@ class BaconDegrees:
                 if link not in self.explored:
                     new_path = path[:]
                     new_path.append(link)
-
                     self.q.put(new_path)
-
-            # For the rare (perhaps non-existent) case when a wikipedia page does not have any
-            # links going in/out of it.
-            if self.q.empty() and not event.is_set():
-                self.deg.put([])
-                event.set()
-                return
 
     # Driver function which spins up a worker_pool and runs the explore() function
     def get_degrees(self, start_uri=GOOD_MEN, target_uri=KEVIN_BACON):
@@ -128,7 +129,10 @@ class BaconDegrees:
         event.wait()
         worker_pool.terminate()
 
-        path = self.deg.get()
+        try:
+            path = self.deg.get(timeout=self.TIMEOUT)
+        except Empty:
+            return [], -1
         degrees = len(path) - 1
         return path, degrees
 

@@ -37,12 +37,7 @@ class TestSeparationDegrees(TestCase):
        result = self.bacon_degrees.pre_enque_check('no_result.com', ['check_true.com'])
        assert result == False
 
-    @patch('degrees.BaconDegrees.get_links')
-    def test_empty_q(self, mock_links):
-        mock_links.return_value = []
-        self.bacon_degrees.q.put(['random_url'])
-        self.bacon_degrees.qsize.put(1)
-
+    def test_empty_q(self):
         worker_manager = Manager()
         event = worker_manager.Event()
         self.bacon_degrees.explore('target_uri', event)
